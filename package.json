@@ -9,7 +9,7 @@
   },
   "engineStrict": false,
   "name": "extension-from-store",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Download public browser extensions from official stores",
   "homepage": "https://www.npmjs.com/package/extension-from-store",
   "type": "module",
@@ -22,7 +22,11 @@
   },
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "bin.cjs", "bin.js"],
+  "files": [
+    "dist",
+    "bin.cjs",
+    "bin.js"
+  ],
   "bin": {
     "extension-from-store": "bin.cjs"
   },
