@@ -45,6 +45,33 @@ const options = {
 await fetchExtensionFromStore(url, options)
 ```
 
+**Via browser entrypoint:**
+
+```ts
+import {fetchExtensionFromStoreBrowser} from 'extension-from-store/browser'
+
+const result = await fetchExtensionFromStoreBrowser(
+  'https://chromewebstore.google.com/detail/adblock-plus-free-ad-bloc/cfhdojbkjhnklbpkdaibdccddilifddb',
+)
+
+console.log(result.meta)
+console.log(result.files.find((file) => file.path === 'manifest.json')?.text)
+```
+
+The browser entry keeps everything in memory and returns archive bytes, extracted files, and parsed manifest metadata. It does not write to disk.
+
+**Via core helpers:**
+
+```ts
+import {
+  detectStoreFromUrl,
+  extractChromeIdFromUrl,
+  getChromeDownloadUrl,
+  parseManifestInfo,
+  stripCrxHeader,
+} from 'extension-from-store/core'
+```
+
 **Via CLI (default command is `fetch`):**
 
 ```bash

@@ -18,20 +18,27 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js",
+      "require": "./dist/browser.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
     }
   },
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "bin.cjs",
-    "bin.js"
-  ],
+  "files": ["dist", "bin.cjs", "bin.js"],
   "bin": {
     "extension-from-store": "bin.cjs"
   },
   "scripts": {
     "build": "rslib build",
+    "typecheck": "tsc --noEmit",
     "check": "pnpm dlx @biomejs/biome@1.9.4 check --write",
     "dev": "rslib build --watch",
     "format": "pnpm dlx @biomejs/biome@1.9.4 format --write",
@@ -69,7 +76,8 @@
     "extension-download"
   ],
   "dependencies": {
-    "extract-zip": "^2.0.1"
+    "extract-zip": "^2.0.1",
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -1,26 +1,19 @@
-function getPlatformInfo() {
-  const platform = process.platform;
-  const arch = process.arch;
-  const os =
-    platform === 'darwin' ? 'mac' : platform === 'win32' ? 'win' : 'linux';
-  const archName =
-    arch === 'x64'
-      ? 'x64'
-      : arch === 'arm64'
-        ? 'arm64'
-        : arch === 'ia32'
-          ? 'x86'
-          : 'x64';
-  return {
-    os,
-    arch: archName,
-    naclArch: archName,
-  };
-}
+import {
+  normalizeChromePlatformInfo,
+  type ChromePlatformInfo,
+} from '../platform';
 
-export function getChromeDownloadUrl(id: string): string {
+const DEFAULT_CHROME_PLATFORM: ChromePlatformInfo = {
+  os: 'linux',
+  arch: 'x64',
+};
+
+export function getChromeDownloadUrl(
+  id: string,
+  platformInfo: ChromePlatformInfo = DEFAULT_CHROME_PLATFORM,
+): string {
   const encoded = encodeURIComponent(id);
-  const platform = getPlatformInfo();
+  const platform = normalizeChromePlatformInfo(platformInfo);
   const productId = 'chromiumcrx';
   const productChannel = 'unknown';
   const productVersion = '9999.0.9999.0';

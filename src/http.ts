@@ -40,6 +40,7 @@ function request(
         port: target.port,
         path: `${target.pathname}${target.search}`,
         headers,
+        agent: false,
       },
       (res) => {
         resolve({

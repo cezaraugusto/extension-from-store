@@ -1,4 +1,3 @@
-import { requestJson } from '../http';
 import { extensionFromStoreError } from '../errors';
 import type { Logger } from '../logger';
 
@@ -15,21 +14,33 @@ type FirefoxVersion = {
   file?: { url?: string };
 };
 
+export type JsonRequester = <T>(
+  url: string,
+  options: { userAgent?: string; logger?: Logger },
+) => Promise<T>;
+
 export async function resolveFirefoxDownload(
   idOrSlug: string,
   versionHint: string | undefined,
-  options: { userAgent?: string; logger?: Logger },
+  options: {
+    userAgent?: string;
+    logger?: Logger;
+    requestJson: JsonRequester;
+  },
 ): Promise<{ downloadUrl: string; version: string; slugOrId: string }> {
   const baseUrl = `https://addons.mozilla.org/api/v5/addons/addon/${encodeURIComponent(
     idOrSlug,
   )}/`;
 
-  const addon = await requestJson<FirefoxAddon>(baseUrl, options);
+  const addon = await options.requestJson<FirefoxAddon>(baseUrl, options);
   const slugOrId = addon.slug || idOrSlug;
 
   if (versionHint) {
     const versionUrl = `${baseUrl}versions/${encodeURIComponent(versionHint)}/`;
-    const version = await requestJson<FirefoxVersion>(versionUrl, options);
+    const version = await options.requestJson<FirefoxVersion>(
+      versionUrl,
+      options,
+    );
     const downloadUrl = version.file?.url;
 
     if (!downloadUrl) {

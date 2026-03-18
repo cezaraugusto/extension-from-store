@@ -114,16 +114,13 @@ async function main() {
   try {
     args = parseArgs(process.argv.slice(2));
     const logger = createCliLogger(args);
-    await fetchExtensionFromStore(
-      args.url,
-      {
-        outDir: args.out || undefined,
-        userAgent: args.userAgent || undefined,
-        version: args.version || undefined,
-        extract: args.extract,
-        logger,
-      },
-    );
+    await fetchExtensionFromStore(args.url, {
+      outDir: args.out || undefined,
+      userAgent: args.userAgent || undefined,
+      version: args.version || undefined,
+      extract: args.extract,
+      logger,
+    });
     process.exit(0);
   } catch (error) {
     if (error instanceof extensionFromStoreError) {
