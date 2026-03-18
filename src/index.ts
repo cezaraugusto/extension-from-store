@@ -1,20 +1,18 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import os from 'node:os';
-import { downloadToFile } from './http';
+import path from 'node:path';
 import { extensionFromStoreError, type ErrorCode } from './errors';
-import { createLogger, type Logger } from './logger';
 import { extractCrx, extractZipArchive } from './extract';
+import { downloadToFile, requestJson } from './http';
+import { createLogger, type Logger } from './logger';
 import { readManifestInfo } from './meta';
-import { getChromeDownloadUrl } from './stores/chrome';
-import { getEdgeDownloadUrl } from './stores/edge';
-import { resolveFirefoxDownload } from './stores/firefox';
+import { getNodeChromePlatformInfo } from './node-platform';
 import {
-  detectStoreFromUrl,
-  extractChromeIdFromUrl,
-  extractEdgeIdFromUrl,
-  extractFirefoxSlugFromUrl,
-} from './stores/resolve-slug';
+  resolveDownload,
+  sanitizeSegment,
+  type ResolvedDownload,
+  validateInput,
+} from './resolve';
 
 export type DownloadOptions = {
   outDir?: string;
@@ -27,35 +25,8 @@ export type DownloadOptions = {
 export { extensionFromStoreError } from './errors';
 export type { Logger } from './logger';
 
-type ResolvedDownload = {
-  downloadUrl: string;
-  archiveType: 'crx' | 'xpi';
-  versionHint?: string;
-  downloadId?: string;
-  slugOrId: string;
-};
-
-function validateInput(url: string): void {
-  if (!url || typeof url !== 'string') {
-    throw new extensionFromStoreError('InvalidInput', 'URL is required');
-  }
-}
-
 function defaultOutputDir(): string {
   return path.resolve(process.cwd(), 'extensions');
-}
-
-function sanitizeSegment(value: string, label: string): string {
-  const sanitized = value.replace(/[\\/]/g, '-').trim();
-
-  if (!sanitized) {
-    throw new extensionFromStoreError(
-      'InvalidInput',
-      `${label} is not a valid path segment`,
-    );
-  }
-
-  return sanitized;
 }
 
 async function ensureDirExists(dir: string): Promise<void> {
@@ -80,73 +51,6 @@ async function moveDir(source: string, destination: string): Promise<void> {
   }
 }
 
-async function resolveDownload(
-  url: string,
-  version: string | undefined,
-  options: DownloadOptions,
-): Promise<ResolvedDownload> {
-  const store = detectStoreFromUrl(url);
-
-  if (!store) {
-    throw new extensionFromStoreError(
-      'UnsupportedStore',
-      'URL does not match a supported store',
-    );
-  }
-
-  if (store === 'chrome') {
-    const downloadId = extractChromeIdFromUrl(url);
-
-    if (!downloadId) {
-      throw new extensionFromStoreError(
-        'NotFound',
-        'Chrome extension id not found in URL',
-      );
-    }
-    return {
-      downloadUrl: getChromeDownloadUrl(downloadId),
-      archiveType: 'crx',
-      downloadId,
-      slugOrId: downloadId,
-    };
-  }
-
-  if (store === 'edge') {
-    const downloadId = extractEdgeIdFromUrl(url);
-
-    if (!downloadId) {
-      throw new extensionFromStoreError(
-        'NotFound',
-        'Edge extension id not found in URL',
-      );
-    }
-
-    return {
-      downloadUrl: getEdgeDownloadUrl(downloadId),
-      archiveType: 'crx',
-      downloadId,
-      slugOrId: downloadId,
-    };
-  }
-
-  const slug = extractFirefoxSlugFromUrl(url);
-
-  if (!slug) {
-    throw new extensionFromStoreError(
-      'NotFound',
-      'Firefox extension slug not found in URL',
-    );
-  }
-  const firefox = await resolveFirefoxDownload(slug, version, options);
-
-  return {
-    downloadUrl: firefox.downloadUrl,
-    archiveType: 'xpi',
-    versionHint: firefox.version,
-    slugOrId: firefox.slugOrId,
-  };
-}
-
 function errorWithCode(code: ErrorCode, message: string, cause?: unknown) {
   return new extensionFromStoreError(code, message, cause);
 }
@@ -162,7 +66,13 @@ export async function fetchExtensionFromStore(
     : defaultOutputDir();
 
   await ensureDirExists(outDir);
-  const resolved = await resolveDownload(url, options.version, options);
+  const resolved = await resolveDownload(url, {
+    version: options.version,
+    userAgent: options.userAgent,
+    logger: options.logger,
+    platform: getNodeChromePlatformInfo(),
+    requestJson,
+  });
 
   if (options.version && !url.includes('addons.mozilla.org')) {
     log.warn(
@@ -226,7 +136,7 @@ export async function fetchExtensionFromStore(
     await moveDir(extractDir, finalDir);
     const metaPath = path.join(finalDir, 'extension.meta.json');
     const meta = {
-      store: detectStoreFromUrl(url) || 'chrome',
+      store: resolved.store,
       identifier: resolved.slugOrId,
       version: resolvedVersion,
       manifestVersion: manifestInfo.manifestVersion,

@@ -1,10 +1,6 @@
 import fs from 'node:fs/promises';
 import { extensionFromStoreError } from './errors';
-
-export type ManifestInfo = {
-  extensionVersion: string;
-  manifestVersion: 2 | 3;
-};
+import { parseManifestInfo, type ManifestInfo } from './manifest';
 
 export async function readManifestInfo(
   manifestPath: string,
@@ -20,31 +16,5 @@ export async function readManifestInfo(
     );
   }
 
-  let parsed: any;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (error) {
-    throw new extensionFromStoreError(
-      'ExtractionFailed',
-      'manifest.json is not valid JSON',
-      error,
-    );
-  }
-
-  const manifestVersion = parsed?.manifest_version;
-  const extensionVersion = parsed?.version;
-  if (manifestVersion !== 2 && manifestVersion !== 3) {
-    throw new extensionFromStoreError(
-      'ExtractionFailed',
-      'manifest_version must be 2 or 3',
-    );
-  }
-  if (!extensionVersion || typeof extensionVersion !== 'string') {
-    throw new extensionFromStoreError(
-      'ExtractionFailed',
-      'manifest.json is missing a version',
-    );
-  }
-
-  return { manifestVersion, extensionVersion };
+  return parseManifestInfo(raw);
 }

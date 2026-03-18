@@ -29,7 +29,6 @@ export function detectStoreFromUrl(url: string): StoreFromUrl {
   return null;
 }
 
-
 export function extractChromeIdFromUrl(url: string): string | null {
   const match = chromePattern.exec(url) || chromeDownloadPattern.exec(url);
   return match ? match[1] : null;
