@@ -1,4 +1,4 @@
-[npm-version-image]: https://img.shields.io/npm/v/extension-from-store.svg?color=0078D7
+[npm-version-image]: https://img.shields.io/npm/v/extension-from-store.svg?color=0971fe
 [npm-version-url]: https://www.npmjs.com/package/extension-from-store
 [npm-downloads-image]: https://img.shields.io/npm/dm/extension-from-store.svg?color=2ecc40
 [npm-downloads-url]: https://www.npmjs.com/package/extension-from-store
