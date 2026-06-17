@@ -1,15 +1,16 @@
-import { extensionFromStoreError } from './errors';
-import type { Logger } from './logger';
-import type { ChromePlatformInfo } from './platform';
-import { getChromeDownloadUrl } from './stores/chrome';
-import { getEdgeDownloadUrl } from './stores/edge';
-import { resolveFirefoxDownload, type JsonRequester } from './stores/firefox';
+import {extensionFromStoreError} from './errors'
+import {getChromeDownloadUrl} from './stores/chrome'
+import {getEdgeDownloadUrl} from './stores/edge'
+import {resolveFirefoxDownload, type JsonRequester} from './stores/firefox'
 import {
   detectStoreFromUrl,
   extractChromeIdFromUrl,
   extractEdgeIdFromUrl,
-  extractFirefoxSlugFromUrl,
-} from './stores/resolve-slug';
+  extractFirefoxSlugFromUrl
+} from './stores/resolve-slug'
+
+import type {ChromePlatformInfo} from './platform'
+import type {Logger} from './logger'
 
 export type ResolvedDownload = {
   store: 'chrome' | 'edge' | 'firefox';
@@ -18,7 +19,7 @@ export type ResolvedDownload = {
   versionHint?: string;
   downloadId?: string;
   slugOrId: string;
-};
+}
 
 export type ResolveDownloadOptions = {
   version?: string;
@@ -26,48 +27,48 @@ export type ResolveDownloadOptions = {
   logger?: Logger;
   platform?: ChromePlatformInfo;
   requestJson: JsonRequester;
-};
+}
 
-export function validateInput(url: string): void {
+export function validateInput (url: string): void {
   if (!url || typeof url !== 'string') {
-    throw new extensionFromStoreError('InvalidInput', 'URL is required');
+    throw new extensionFromStoreError('InvalidInput', 'URL is required')
   }
 }
 
-export function sanitizeSegment(value: string, label: string): string {
-  const sanitized = value.replace(/[\\/]/g, '-').trim();
+export function sanitizeSegment (value: string, label: string): string {
+  const sanitized = value.replace(/[\\/]/g, '-').trim()
 
   if (!sanitized) {
     throw new extensionFromStoreError(
       'InvalidInput',
-      `${label} is not a valid path segment`,
-    );
+      `${label} is not a valid path segment`
+    )
   }
 
-  return sanitized;
+  return sanitized
 }
 
-export async function resolveDownload(
+export async function resolveDownload (
   url: string,
-  options: ResolveDownloadOptions,
+  options: ResolveDownloadOptions
 ): Promise<ResolvedDownload> {
-  const store = detectStoreFromUrl(url);
+  const store = detectStoreFromUrl(url)
 
   if (!store) {
     throw new extensionFromStoreError(
       'UnsupportedStore',
-      'URL does not match a supported store',
-    );
+      'URL does not match a supported store'
+    )
   }
 
   if (store === 'chrome') {
-    const downloadId = extractChromeIdFromUrl(url);
+    const downloadId = extractChromeIdFromUrl(url)
 
     if (!downloadId) {
       throw new extensionFromStoreError(
         'NotFound',
-        'Chrome extension id not found in URL',
-      );
+        'Chrome extension id not found in URL'
+      )
     }
 
     return {
@@ -75,18 +76,18 @@ export async function resolveDownload(
       downloadUrl: getChromeDownloadUrl(downloadId, options.platform),
       archiveType: 'crx',
       downloadId,
-      slugOrId: downloadId,
-    };
+      slugOrId: downloadId
+    }
   }
 
   if (store === 'edge') {
-    const downloadId = extractEdgeIdFromUrl(url);
+    const downloadId = extractEdgeIdFromUrl(url)
 
     if (!downloadId) {
       throw new extensionFromStoreError(
         'NotFound',
-        'Edge extension id not found in URL',
-      );
+        'Edge extension id not found in URL'
+      )
     }
 
     return {
@@ -94,30 +95,30 @@ export async function resolveDownload(
       downloadUrl: getEdgeDownloadUrl(downloadId),
       archiveType: 'crx',
       downloadId,
-      slugOrId: downloadId,
-    };
+      slugOrId: downloadId
+    }
   }
 
-  const slug = extractFirefoxSlugFromUrl(url);
+  const slug = extractFirefoxSlugFromUrl(url)
 
   if (!slug) {
     throw new extensionFromStoreError(
       'NotFound',
-      'Firefox extension slug not found in URL',
-    );
+      'Firefox extension slug not found in URL'
+    )
   }
 
   const firefox = await resolveFirefoxDownload(slug, options.version, {
     userAgent: options.userAgent,
     logger: options.logger,
-    requestJson: options.requestJson,
-  });
+    requestJson: options.requestJson
+  })
 
   return {
     store,
     downloadUrl: firefox.downloadUrl,
     archiveType: 'xpi',
     versionHint: firefox.version,
-    slugOrId: firefox.slugOrId,
-  };
+    slugOrId: firefox.slugOrId
+  }
 }

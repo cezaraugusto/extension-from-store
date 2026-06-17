@@ -1,71 +1,73 @@
-import { extensionFromStoreError } from '../errors';
-import type { Logger } from '../logger';
+import {extensionFromStoreError} from '../errors'
+
+import type {Logger} from '../logger'
 
 type FirefoxAddon = {
   slug?: string;
   current_version?: {
     version?: string;
-    file?: { url?: string };
+    file?: {url?: string};
   };
-};
+}
 
 type FirefoxVersion = {
   version?: string;
-  file?: { url?: string };
-};
+  file?: {url?: string};
+}
 
 export type JsonRequester = <T>(
   url: string,
-  options: { userAgent?: string; logger?: Logger },
-) => Promise<T>;
+  options: {userAgent?: string; logger?: Logger}
+) => Promise<T>
 
-export async function resolveFirefoxDownload(
+export async function resolveFirefoxDownload (
   idOrSlug: string,
   versionHint: string | undefined,
   options: {
     userAgent?: string;
     logger?: Logger;
     requestJson: JsonRequester;
-  },
-): Promise<{ downloadUrl: string; version: string; slugOrId: string }> {
+  }
+): Promise<{downloadUrl: string; version: string; slugOrId: string}> {
   const baseUrl = `https://addons.mozilla.org/api/v5/addons/addon/${encodeURIComponent(
-    idOrSlug,
-  )}/`;
+    idOrSlug
+  )}/`
 
-  const addon = await options.requestJson<FirefoxAddon>(baseUrl, options);
-  const slugOrId = addon.slug || idOrSlug;
+  const addon = await options.requestJson<FirefoxAddon>(baseUrl, options)
+  const slugOrId = addon.slug || idOrSlug
 
   if (versionHint) {
-    const versionUrl = `${baseUrl}versions/${encodeURIComponent(versionHint)}/`;
+    const versionUrl = `${baseUrl}versions/${encodeURIComponent(versionHint)}/`
     const version = await options.requestJson<FirefoxVersion>(
       versionUrl,
-      options,
-    );
-    const downloadUrl = version.file?.url;
+      options
+    )
+
+    const downloadUrl = version.file?.url
 
     if (!downloadUrl) {
       throw new extensionFromStoreError(
         'NotPublic',
-        `Version ${versionHint} is not publicly downloadable`,
-      );
+        `Version ${versionHint} is not publicly downloadable`
+      )
     }
 
     return {
       downloadUrl,
       version: version.version || versionHint,
-      slugOrId,
-    };
+      slugOrId
+    }
   }
 
-  const downloadUrl = addon.current_version?.file?.url;
-  const version = addon.current_version?.version;
+  const downloadUrl = addon.current_version?.file?.url
+  const version = addon.current_version?.version
 
   if (!downloadUrl || !version) {
     throw new extensionFromStoreError(
       'NotPublic',
-      'Extension is not publicly downloadable',
-    );
+      'Extension is not publicly downloadable'
+    )
   }
 
-  return { downloadUrl, version, slugOrId };
+  return {downloadUrl, version, slugOrId}
 }

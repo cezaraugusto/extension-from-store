@@ -1,18 +1,19 @@
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
-import { extensionFromStoreError, type ErrorCode } from './errors';
-import { extractCrx, extractZipArchive } from './extract';
-import { downloadToFile, requestJson } from './http';
-import { createLogger, type Logger } from './logger';
-import { readManifestInfo } from './meta';
-import { getNodeChromePlatformInfo } from './node-platform';
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+
+import {extensionFromStoreError, type ErrorCode} from './errors'
+import {extractCrx, extractZipArchive} from './extract'
+import {downloadToFile, requestJson} from './http'
+import {createLogger, type Logger} from './logger'
+import {readManifestInfo} from './meta'
+import {getNodeChromePlatformInfo} from './node-platform'
 import {
   resolveDownload,
   sanitizeSegment,
   type ResolvedDownload,
-  validateInput,
-} from './resolve';
+  validateInput
+} from './resolve'
 
 export type DownloadOptions = {
   outDir?: string;
@@ -20,139 +21,147 @@ export type DownloadOptions = {
   logger?: Logger;
   version?: string;
   extract?: boolean;
-};
-
-export { extensionFromStoreError } from './errors';
-export type { Logger } from './logger';
-
-function defaultOutputDir(): string {
-  return path.resolve(process.cwd(), 'extensions');
 }
 
-async function ensureDirExists(dir: string): Promise<void> {
-  await fs.mkdir(dir, { recursive: true });
+export {extensionFromStoreError} from './errors'
+export type {Logger} from './logger'
+
+function defaultOutputDir (): string {
+  return path.resolve(process.cwd(), 'extensions')
 }
 
-async function pathExists(target: string): Promise<boolean> {
+async function ensureDirExists (dir: string): Promise<void> {
+  await fs.mkdir(dir, {recursive: true})
+}
+
+async function pathExists (target: string): Promise<boolean> {
   try {
-    await fs.access(target);
-    return true;
+    await fs.access(target)
+
+    return true
   } catch {
-    return false;
+    return false
   }
 }
 
-async function moveDir(source: string, destination: string): Promise<void> {
+async function moveDir (source: string, destination: string): Promise<void> {
   try {
-    await fs.rename(source, destination);
+    await fs.rename(source, destination)
   } catch {
-    await fs.cp(source, destination, { recursive: true });
-    await fs.rm(source, { recursive: true, force: true });
+    await fs.cp(source, destination, {recursive: true})
+    await fs.rm(source, {recursive: true, force: true})
   }
 }
 
-function errorWithCode(code: ErrorCode, message: string, cause?: unknown) {
-  return new extensionFromStoreError(code, message, cause);
+function errorWithCode (code: ErrorCode, message: string, cause?: unknown) {
+  return new extensionFromStoreError(code, message, cause)
 }
 
-export async function fetchExtensionFromStore(
+export async function fetchExtensionFromStore (
   url: string,
-  options: DownloadOptions = {},
+  options: DownloadOptions = {}
 ): Promise<void> {
-  validateInput(url);
-  const log = createLogger(options.logger);
+  validateInput(url)
+  const log = createLogger(options.logger)
   const outDir = options.outDir
     ? path.resolve(options.outDir)
-    : defaultOutputDir();
+    : defaultOutputDir()
 
-  await ensureDirExists(outDir);
+  await ensureDirExists(outDir)
   const resolved = await resolveDownload(url, {
     version: options.version,
     userAgent: options.userAgent,
     logger: options.logger,
     platform: getNodeChromePlatformInfo(),
-    requestJson,
-  });
+    requestJson
+  })
 
   if (options.version && !url.includes('addons.mozilla.org')) {
     log.warn(
-      'Version hints are best-effort and only supported on Firefox at the moment.',
-    );
+      'Version hints are best-effort and only supported on Firefox at the moment.'
+    )
   }
 
   const workDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), 'extension-from-store-'),
-  );
-  const archivePath = path.join(workDir, `archive.${resolved.archiveType}`);
-  const extractDir = path.join(workDir, 'extracted');
+    path.join(os.tmpdir(), 'extension-from-store-')
+  )
+
+  const archivePath = path.join(workDir, `archive.${resolved.archiveType}`)
+  const extractDir = path.join(workDir, 'extracted')
 
   try {
-    log.info(`Downloading from ${resolved.downloadUrl}`);
+    log.info(`Downloading from ${resolved.downloadUrl}`)
     await downloadToFile(resolved.downloadUrl, archivePath, {
       userAgent: options.userAgent,
-      logger: options.logger,
-    });
+      logger: options.logger
+    })
 
-    const safeId = sanitizeSegment(resolved.slugOrId, 'Extension identifier');
+    const safeId = sanitizeSegment(resolved.slugOrId, 'Extension identifier')
     const versionSuffix = resolved.versionHint
       ? `@${sanitizeSegment(resolved.versionHint, 'Extension version')}`
-      : '';
+      : ''
 
     if (options.extract !== true) {
-      const archiveName = `${safeId}${versionSuffix}.${resolved.archiveType}`;
-      const finalArchivePath = path.join(outDir, archiveName);
+      const archiveName = `${safeId}${versionSuffix}.${resolved.archiveType}`
+      const finalArchivePath = path.join(outDir, archiveName)
+
       if (await pathExists(finalArchivePath)) {
         throw errorWithCode(
           'FilesystemConflict',
-          `Target file already exists: ${finalArchivePath}`,
-        );
+          `Target file already exists: ${finalArchivePath}`
+        )
       }
-      await fs.rename(archivePath, finalArchivePath);
-      return;
+
+      await fs.rename(archivePath, finalArchivePath)
+
+      return
     }
 
-    await fs.mkdir(extractDir, { recursive: true });
+    await fs.mkdir(extractDir, {recursive: true})
+
     if (resolved.archiveType === 'crx') {
-      await extractCrx(archivePath, extractDir, workDir);
+      await extractCrx(archivePath, extractDir, workDir)
     } else {
-      await extractZipArchive(archivePath, extractDir);
+      await extractZipArchive(archivePath, extractDir)
     }
 
-    const manifestPath = path.join(extractDir, 'manifest.json');
-    const manifestInfo = await readManifestInfo(manifestPath);
+    const manifestPath = path.join(extractDir, 'manifest.json')
+    const manifestInfo = await readManifestInfo(manifestPath)
     const resolvedVersion =
-      resolved.versionHint || manifestInfo.extensionVersion;
-    const safeVersion = sanitizeSegment(resolvedVersion, 'Extension version');
-    const folderName = `${safeId}@${safeVersion}`;
-    const finalDir = path.join(outDir, folderName);
+      resolved.versionHint || manifestInfo.extensionVersion
+
+    const safeVersion = sanitizeSegment(resolvedVersion, 'Extension version')
+    const folderName = `${safeId}@${safeVersion}`
+    const finalDir = path.join(outDir, folderName)
 
     if (await pathExists(finalDir)) {
       throw errorWithCode(
         'FilesystemConflict',
-        `Target folder already exists: ${finalDir}`,
-      );
+        `Target folder already exists: ${finalDir}`
+      )
     }
 
-    await moveDir(extractDir, finalDir);
-    const metaPath = path.join(finalDir, 'extension.meta.json');
+    await moveDir(extractDir, finalDir)
+    const metaPath = path.join(finalDir, 'extension.meta.json')
     const meta = {
       store: resolved.store,
       identifier: resolved.slugOrId,
       version: resolvedVersion,
-      manifestVersion: manifestInfo.manifestVersion,
-    };
+      manifestVersion: manifestInfo.manifestVersion
+    }
 
-    await fs.writeFile(metaPath, `${JSON.stringify(meta, null, 2)}\n`, 'utf8');
+    await fs.writeFile(metaPath, `${JSON.stringify(meta, null, 2)}\n`, 'utf8')
   } catch (error) {
-    if (error instanceof extensionFromStoreError) throw error;
+    if (error instanceof extensionFromStoreError) throw error
+
     throw errorWithCode(
       'ExtractionFailed',
       'Failed to extract extension',
-      error,
-    );
+      error
+    )
   } finally {
     await fs
-      .rm(workDir, { recursive: true, force: true })
-      .catch(() => undefined);
+      .rm(workDir, {recursive: true, force: true})
+      .catch(() => undefined)
   }
 }

@@ -1,35 +1,36 @@
-import fs from 'node:fs';
-import http from 'node:http';
-import https from 'node:https';
-import { pipeline } from 'node:stream/promises';
-import { URL } from 'node:url';
-import { extensionFromStoreError } from './errors';
-import { createLogger, type Logger } from './logger';
+import fs from 'node:fs'
+import http from 'node:http'
+import https from 'node:https'
+import {pipeline} from 'node:stream/promises'
+import {URL} from 'node:url'
+
+import {extensionFromStoreError} from './errors'
+import {createLogger, type Logger} from './logger'
 
 type HttpOptions = {
   userAgent?: string;
   logger?: Logger;
-};
+}
 
 type RequestOptions = HttpOptions & {
   method?: 'GET' | 'HEAD';
-};
+}
 
-const DEFAULT_USER_AGENT = 'extension-from-store';
+const DEFAULT_USER_AGENT = 'extension-from-store'
 
-function request(
+function request (
   url: string,
-  options: RequestOptions,
+  options: RequestOptions
 ): Promise<{
   statusCode: number;
   headers: http.IncomingHttpHeaders;
   stream: any;
 }> {
-  const target = new URL(url);
-  const client = target.protocol === 'http:' ? http : https;
+  const target = new URL(url)
+  const client = target.protocol === 'http:' ? http : https
   const headers: Record<string, string> = {
-    'user-agent': options.userAgent || DEFAULT_USER_AGENT,
-  };
+    'user-agent': options.userAgent || DEFAULT_USER_AGENT
+  }
 
   return new Promise((resolve, reject) => {
     const req = client.request(
@@ -40,38 +41,40 @@ function request(
         port: target.port,
         path: `${target.pathname}${target.search}`,
         headers,
-        agent: false,
+        agent: false
       },
       (res) => {
         resolve({
           statusCode: res.statusCode || 0,
           headers: res.headers,
-          stream: res,
-        });
-      },
-    );
-    req.on('error', reject);
-    req.end();
-  });
+          stream: res
+        })
+      }
+    )
+
+    req.on('error', reject)
+    req.end()
+  })
 }
 
-function resolveRedirectUrl(base: string, location: string): string {
-  return new URL(location, base).toString();
+function resolveRedirectUrl (base: string, location: string): string {
+  return new URL(location, base).toString()
 }
 
-export async function resolveFinalUrl(
+export async function resolveFinalUrl (
   url: string,
   options: HttpOptions,
-  maxRedirects = 5,
+  maxRedirects = 5
 ): Promise<string> {
-  const { statusCode, headers, stream } = await request(url, {
+  const {statusCode, headers, stream} = await request(url, {
     ...options,
-    method: 'HEAD',
-  });
+    method: 'HEAD'
+  })
 
   if (statusCode === 405) {
-    stream.resume();
-    return resolveFinalUrlWithGet(url, options, maxRedirects);
+    stream.resume()
+
+    return resolveFinalUrlWithGet(url, options, maxRedirects)
   }
 
   if (
@@ -79,60 +82,64 @@ export async function resolveFinalUrl(
     statusCode < 400 &&
     typeof headers.location === 'string'
   ) {
-    stream.resume();
+    stream.resume()
 
     if (maxRedirects <= 0) {
       throw new extensionFromStoreError(
         'DownloadFailed',
-        `Too many redirects while resolving ${url}`,
-      );
+        `Too many redirects while resolving ${url}`
+      )
     }
 
-    const next = resolveRedirectUrl(url, headers.location);
-    return resolveFinalUrl(next, options, maxRedirects - 1);
+    const next = resolveRedirectUrl(url, headers.location)
+
+    return resolveFinalUrl(next, options, maxRedirects - 1)
   }
 
-  stream.resume();
-  return url;
+  stream.resume()
+
+  return url
 }
 
-async function resolveFinalUrlWithGet(
+async function resolveFinalUrlWithGet (
   url: string,
   options: HttpOptions,
-  maxRedirects: number,
+  maxRedirects: number
 ): Promise<string> {
-  const { statusCode, headers, stream } = await request(url, options);
+  const {statusCode, headers, stream} = await request(url, options)
 
   if (
     statusCode >= 300 &&
     statusCode < 400 &&
     typeof headers.location === 'string'
   ) {
-    stream.resume();
+    stream.resume()
 
     if (maxRedirects <= 0) {
       throw new extensionFromStoreError(
         'DownloadFailed',
-        `Too many redirects while resolving ${url}`,
-      );
+        `Too many redirects while resolving ${url}`
+      )
     }
 
-    const next = resolveRedirectUrl(url, headers.location);
-    return resolveFinalUrlWithGet(next, options, maxRedirects - 1);
+    const next = resolveRedirectUrl(url, headers.location)
+
+    return resolveFinalUrlWithGet(next, options, maxRedirects - 1)
   }
 
-  stream.resume();
-  return url;
+  stream.resume()
+
+  return url
 }
 
-export async function downloadToFile(
+export async function downloadToFile (
   url: string,
   filePath: string,
   options: HttpOptions,
-  maxRedirects = 5,
+  maxRedirects = 5
 ): Promise<void> {
-  const log = createLogger(options.logger);
-  const { statusCode, headers, stream } = await request(url, options);
+  const log = createLogger(options.logger)
+  const {statusCode, headers, stream} = await request(url, options)
 
   if (
     statusCode >= 300 &&
@@ -142,46 +149,47 @@ export async function downloadToFile(
     if (maxRedirects <= 0) {
       throw new extensionFromStoreError(
         'DownloadFailed',
-        `Too many redirects while downloading ${url}`,
-      );
+        `Too many redirects while downloading ${url}`
+      )
     }
 
-    const next = resolveRedirectUrl(url, headers.location);
-    log.info(`Redirecting to ${next}`);
+    const next = resolveRedirectUrl(url, headers.location)
 
-    return downloadToFile(next, filePath, options, maxRedirects - 1);
+    log.info(`Redirecting to ${next}`)
+
+    return downloadToFile(next, filePath, options, maxRedirects - 1)
   }
 
   if (statusCode < 200 || statusCode >= 300) {
     if (statusCode === 404) {
       throw new extensionFromStoreError(
         'NotFound',
-        `Extension not found at ${url}`,
-      );
+        `Extension not found at ${url}`
+      )
     }
 
     if (statusCode === 401 || statusCode === 403) {
       throw new extensionFromStoreError(
         'NotPublic',
-        `Extension is not publicly downloadable`,
-      );
+        'Extension is not publicly downloadable'
+      )
     }
 
     throw new extensionFromStoreError(
       'DownloadFailed',
-      `Failed to download ${url} (HTTP ${statusCode})`,
-    );
+      `Failed to download ${url} (HTTP ${statusCode})`
+    )
   }
 
-  await pipeline(stream, fs.createWriteStream(filePath));
+  await pipeline(stream, fs.createWriteStream(filePath))
 }
 
-export async function requestJson<T>(
+export async function requestJson<T> (
   url: string,
   options: HttpOptions,
-  maxRedirects = 5,
+  maxRedirects = 5
 ): Promise<T> {
-  const { statusCode, headers, stream } = await request(url, options);
+  const {statusCode, headers, stream} = await request(url, options)
 
   if (
     statusCode >= 300 &&
@@ -191,54 +199,54 @@ export async function requestJson<T>(
     if (maxRedirects <= 0) {
       throw new extensionFromStoreError(
         'DownloadFailed',
-        `Too many redirects while requesting ${url}`,
-      );
+        `Too many redirects while requesting ${url}`
+      )
     }
 
-    const next = resolveRedirectUrl(url, headers.location);
+    const next = resolveRedirectUrl(url, headers.location)
 
-    return requestJson<T>(next, options, maxRedirects - 1);
+    return requestJson<T>(next, options, maxRedirects - 1)
   }
 
   if (statusCode < 200 || statusCode >= 300) {
     if (statusCode === 404) {
       throw new extensionFromStoreError(
         'NotFound',
-        `Extension not found at ${url}`,
-      );
+        `Extension not found at ${url}`
+      )
     }
 
     throw new extensionFromStoreError(
       'DownloadFailed',
-      `Failed to request ${url} (HTTP ${statusCode})`,
-    );
+      `Failed to request ${url} (HTTP ${statusCode})`
+    )
   }
 
-  const chunks: Buffer[] = [];
+  const chunks: Buffer[] = []
 
   for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
   }
 
-  const body = Buffer.concat(chunks).toString('utf8');
+  const body = Buffer.concat(chunks).toString('utf8')
 
   try {
-    return JSON.parse(body) as T;
+    return JSON.parse(body) as T
   } catch (error) {
     throw new extensionFromStoreError(
       'StoreIncompatibility',
       `Invalid JSON response from ${url}`,
-      error,
-    );
+      error
+    )
   }
 }
 
-export async function requestText(
+export async function requestText (
   url: string,
   options: HttpOptions,
-  maxRedirects = 5,
+  maxRedirects = 5
 ): Promise<string> {
-  const { statusCode, headers, stream } = await request(url, options);
+  const {statusCode, headers, stream} = await request(url, options)
 
   if (
     statusCode >= 300 &&
@@ -248,34 +256,34 @@ export async function requestText(
     if (maxRedirects <= 0) {
       throw new extensionFromStoreError(
         'DownloadFailed',
-        `Too many redirects while requesting ${url}`,
-      );
+        `Too many redirects while requesting ${url}`
+      )
     }
 
-    const next = resolveRedirectUrl(url, headers.location);
+    const next = resolveRedirectUrl(url, headers.location)
 
-    return requestText(next, options, maxRedirects - 1);
+    return requestText(next, options, maxRedirects - 1)
   }
 
   if (statusCode < 200 || statusCode >= 300) {
     if (statusCode === 404) {
       throw new extensionFromStoreError(
         'NotFound',
-        `Extension not found at ${url}`,
-      );
+        `Extension not found at ${url}`
+      )
     }
 
     throw new extensionFromStoreError(
       'DownloadFailed',
-      `Failed to request ${url} (HTTP ${statusCode})`,
-    );
+      `Failed to request ${url} (HTTP ${statusCode})`
+    )
   }
 
-  const chunks: Buffer[] = [];
+  const chunks: Buffer[] = []
 
   for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
   }
 
-  return Buffer.concat(chunks).toString('utf8');
+  return Buffer.concat(chunks).toString('utf8')
 }
