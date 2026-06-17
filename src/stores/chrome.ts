@@ -1,22 +1,22 @@
 import {
   normalizeChromePlatformInfo,
-  type ChromePlatformInfo,
-} from '../platform';
+  type ChromePlatformInfo
+} from '../platform'
 
 const DEFAULT_CHROME_PLATFORM: ChromePlatformInfo = {
   os: 'linux',
-  arch: 'x64',
-};
+  arch: 'x64'
+}
 
-export function getChromeDownloadUrl(
+export function getChromeDownloadUrl (
   id: string,
-  platformInfo: ChromePlatformInfo = DEFAULT_CHROME_PLATFORM,
+  platformInfo: ChromePlatformInfo = DEFAULT_CHROME_PLATFORM
 ): string {
-  const encoded = encodeURIComponent(id);
-  const platform = normalizeChromePlatformInfo(platformInfo);
-  const productId = 'chromiumcrx';
-  const productChannel = 'unknown';
-  const productVersion = '9999.0.9999.0';
+  const encoded = encodeURIComponent(id)
+  const platform = normalizeChromePlatformInfo(platformInfo)
+  const productId = 'chromiumcrx'
+  const productChannel = 'unknown'
+  const productVersion = '9999.0.9999.0'
 
   return [
     'https://clients2.google.com/service/update2/crx',
@@ -29,6 +29,6 @@ export function getChromeDownloadUrl(
     `&prodchannel=${productChannel}`,
     `&prodversion=${productVersion}`,
     '&acceptformat=crx2,crx3',
-    `&x=id%3D${encoded}%26uc`,
-  ].join('');
+    `&x=id%3D${encoded}%26uc`
+  ].join('')
 }

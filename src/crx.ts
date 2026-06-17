@@ -1,49 +1,55 @@
-import { extensionFromStoreError } from './errors';
+import {extensionFromStoreError} from './errors'
 
-function readUInt32LE(bytes: Uint8Array, offset: number): number {
+function readUInt32LE (bytes: Uint8Array, offset: number): number {
   const view = new DataView(
     bytes.buffer,
     bytes.byteOffset + offset,
-    Uint32Array.BYTES_PER_ELEMENT,
-  );
-  return view.getUint32(0, true);
+    Uint32Array.BYTES_PER_ELEMENT
+  )
+
+  return view.getUint32(0, true)
 }
 
-function readMagic(bytes: Uint8Array): string {
-  let out = '';
-  const slice = bytes.subarray(0, 4);
+function readMagic (bytes: Uint8Array): string {
+  let out = ''
+  const slice = bytes.subarray(0, 4)
+
   for (let index = 0; index < slice.length; index += 1) {
-    out += String.fromCharCode(slice[index] as number);
+    out += String.fromCharCode(slice[index] as number)
   }
-  return out;
+
+  return out
 }
 
-export function stripCrxHeader(buffer: Uint8Array): Uint8Array {
+export function stripCrxHeader (buffer: Uint8Array): Uint8Array {
   if (buffer.length < 16) {
-    throw new extensionFromStoreError('ExtractionFailed', 'CRX file too small');
+    throw new extensionFromStoreError('ExtractionFailed', 'CRX file too small')
   }
 
-  const magic = readMagic(buffer);
+  const magic = readMagic(buffer)
+
   if (magic !== 'Cr24') {
-    throw new extensionFromStoreError('ExtractionFailed', 'Invalid CRX header');
+    throw new extensionFromStoreError('ExtractionFailed', 'Invalid CRX header')
   }
 
-  const version = readUInt32LE(buffer, 4);
+  const version = readUInt32LE(buffer, 4)
 
   if (version === 2) {
-    const publicKeyLength = readUInt32LE(buffer, 8);
-    const signatureLength = readUInt32LE(buffer, 12);
-    const headerSize = 16 + publicKeyLength + signatureLength;
-    return buffer.subarray(headerSize);
+    const publicKeyLength = readUInt32LE(buffer, 8)
+    const signatureLength = readUInt32LE(buffer, 12)
+    const headerSize = 16 + publicKeyLength + signatureLength
+
+    return buffer.subarray(headerSize)
   }
 
   if (version === 3) {
-    const headerSize = readUInt32LE(buffer, 8);
-    return buffer.subarray(12 + headerSize);
+    const headerSize = readUInt32LE(buffer, 8)
+
+    return buffer.subarray(12 + headerSize)
   }
 
   throw new extensionFromStoreError(
     'ExtractionFailed',
-    `Unsupported CRX version ${version}`,
-  );
+    `Unsupported CRX version ${version}`
+  )
 }

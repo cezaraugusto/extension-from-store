@@ -1,27 +1,29 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import extractZip from 'extract-zip';
-import { stripCrxHeader } from './crx';
+import fs from 'node:fs/promises'
+import path from 'node:path'
 
-export { stripCrxHeader } from './crx';
+import extractZip from 'extract-zip'
 
-export async function extractCrx(
+import {stripCrxHeader} from './crx'
+
+export {stripCrxHeader} from './crx'
+
+export async function extractCrx (
   crxPath: string,
   extractDir: string,
-  workDir: string,
+  workDir: string
 ): Promise<void> {
-  const crxBuffer = await fs.readFile(crxPath);
-  const zipBuffer = Buffer.from(stripCrxHeader(crxBuffer));
-  const zipPath = path.join(workDir, 'payload.zip');
+  const crxBuffer = await fs.readFile(crxPath)
+  const zipBuffer = Buffer.from(stripCrxHeader(crxBuffer))
+  const zipPath = path.join(workDir, 'payload.zip')
 
-  await fs.writeFile(zipPath, zipBuffer);
-  await extractZip(zipPath, { dir: extractDir });
-  await fs.unlink(zipPath).catch(() => undefined);
+  await fs.writeFile(zipPath, zipBuffer)
+  await extractZip(zipPath, {dir: extractDir})
+  await fs.unlink(zipPath).catch(() => undefined)
 }
 
-export async function extractZipArchive(
+export async function extractZipArchive (
   zipPath: string,
-  extractDir: string,
+  extractDir: string
 ): Promise<void> {
-  await extractZip(zipPath, { dir: extractDir });
+  await extractZip(zipPath, {dir: extractDir})
 }
