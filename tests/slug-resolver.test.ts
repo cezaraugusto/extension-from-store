@@ -8,7 +8,7 @@ import {
 } from '../src/stores/resolve-slug'
 
 describe('extractExtensionIdFromUrl', () => {
-  test('extracts from Chrome Web Store URL', () => {
+  it('extracts from Chrome Web Store URL', () => {
     const url =
       'https://chromewebstore.google.com/detail/adblock-plus-free-ad-bloc/cfhdojbkjhnklbpkdaibdccddilifddb'
 
@@ -17,20 +17,20 @@ describe('extractExtensionIdFromUrl', () => {
     )
   })
 
-  test('extracts from Edge Add-ons URL', () => {
+  it('extracts from Edge Add-ons URL', () => {
     const url =
       'https://microsoftedge.microsoft.com/addons/detail/adblock-plus-free-ad-bl/gmgoamodcdcjnbaobigkjelfplakmdhh'
 
     expect(extractEdgeIdFromUrl(url)).toBe('gmgoamodcdcjnbaobigkjelfplakmdhh')
   })
 
-  test('extracts Firefox slug from URL', () => {
+  it('extracts Firefox slug from URL', () => {
     const url = 'https://addons.mozilla.org/en-US/firefox/addon/adblock-plus/'
 
     expect(extractFirefoxSlugFromUrl(url)).toBe('adblock-plus')
   })
 
-  test('detects store from URL', () => {
+  it('detects store from URL', () => {
     expect(
       detectStoreFromUrl(
         'https://chromewebstore.google.com/detail/adblock-plus-free-ad-bloc/cfhdojbkjhnklbpkdaibdccddilifddb'
