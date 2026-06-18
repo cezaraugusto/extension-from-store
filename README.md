@@ -151,6 +151,14 @@ Library logging is opt-in via the `logger` hooks. The library never writes direc
 - `6` filesystem conflict
 - `7` store incompatibility
 
+## Related projects
+
+* [browser-extension-manifest-fields](https://github.com/cezaraugusto/browser-extension-manifest-fields)
+* [browser-extension-capabilities](https://github.com/cezaraugusto/browser-extension-capabilities)
+* [browser-extension-compat-data](https://github.com/cezaraugusto/browser-extension-compat-data)
+* [chrome-extension-manifest-json-schema](https://github.com/cezaraugusto/chrome-extension-manifest-json-schema)
+* [parse5-asset-patcher](https://github.com/cezaraugusto/parse5-asset-patcher)
+
 ## License
 
 MIT (c) Cezar Augusto.
