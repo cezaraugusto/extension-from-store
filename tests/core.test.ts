@@ -4,7 +4,7 @@ import {parseManifestInfo} from '../src/manifest'
 import {getChromeDownloadUrl} from '../src/stores/chrome'
 
 describe('core helpers', () => {
-  test('parses manifest metadata from raw text', () => {
+  it('parses manifest metadata from raw text', () => {
     const manifest = parseManifestInfo(
       JSON.stringify({
         manifest_version: 3,
@@ -18,7 +18,7 @@ describe('core helpers', () => {
     expect(manifest.manifest.name).toBe('Example extension')
   })
 
-  test('builds a chrome download url with explicit platform info', () => {
+  it('builds a chrome download url with explicit platform info', () => {
     const url = getChromeDownloadUrl('cfhdojbkjhnklbpkdaibdccddilifddb', {
       os: 'mac',
       arch: 'arm64'

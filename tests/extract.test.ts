@@ -16,7 +16,7 @@ function buildCrx2 (payload: Buffer): Buffer {
 }
 
 describe('stripCrxHeader', () => {
-  test('extracts payload from CRX2 buffer', () => {
+  it('extracts payload from CRX2 buffer', () => {
     const payload = Buffer.from('ZIPDATA')
     const crx = buildCrx2(payload)
     const extracted = stripCrxHeader(crx)
@@ -24,7 +24,7 @@ describe('stripCrxHeader', () => {
     expect(extracted.toString('utf8')).toBe('ZIPDATA')
   })
 
-  test('throws on invalid header', () => {
+  it('throws on invalid header', () => {
     const bad = Buffer.from('BAD!')
 
     expect(() => stripCrxHeader(bad)).toThrow()

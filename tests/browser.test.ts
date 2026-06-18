@@ -27,7 +27,7 @@ function buildCrx2 (payload: Uint8Array): Uint8Array {
 }
 
 describe('fetchExtensionFromStoreBrowser', () => {
-  test('downloads, extracts, and returns browser-friendly file data', async () => {
+  it('downloads, extracts, and returns browser-friendly file data', async () => {
     const zipBytes = zipSync({
       'manifest.json': strToU8(
         JSON.stringify({
