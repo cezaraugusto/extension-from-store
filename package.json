@@ -9,7 +9,7 @@
   },
   "engineStrict": false,
   "name": "extension-from-store",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Download public browser extensions from official stores",
   "homepage": "https://www.npmjs.com/package/extension-from-store",
   "type": "module",
