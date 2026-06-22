@@ -10,7 +10,7 @@
 # extension-from-store [![Version][npm-version-image]][npm-version-url] [![Downloads][npm-downloads-image]][npm-downloads-url] [![workflow][action-image]][action-url]
 
 - Chrome Web Store, Microsoft Edge Add-ons, Firefox AMO
-- Easy-to-use API
+- Promise-based API
 - Node.js + CLI support
 
 ## Install
