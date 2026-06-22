@@ -21,8 +21,6 @@ npm i extension-from-store
 
 ## Usage
 
-Designed for quiet reliability, extension-from-store keeps the interface simple and the output predictable.
-
 **Via Node.js:**
 
 ```ts
