@@ -4,10 +4,12 @@
 [npm-downloads-url]: https://www.npmjs.com/package/extension-from-store
 [action-image]: https://github.com/cezaraugusto/extension-from-store/actions/workflows/ci.yml/badge.svg?branch=main
 [action-url]: https://github.com/cezaraugusto/extension-from-store/actions
+[provenance-image]: https://img.shields.io/badge/provenance-verified-0971fe?logo=npm&logoColor=white
+[provenance-url]: https://www.npmjs.com/package/extension-from-store
 
 > Download public browser extensions from official stores
 
-# extension-from-store [![Version][npm-version-image]][npm-version-url] [![Downloads][npm-downloads-image]][npm-downloads-url] [![workflow][action-image]][action-url]
+# extension-from-store [![Version][npm-version-image]][npm-version-url] [![Downloads][npm-downloads-image]][npm-downloads-url] [![workflow][action-image]][action-url] [![provenance][provenance-image]][provenance-url]
 
 - Chrome Web Store, Microsoft Edge Add-ons, Firefox AMO
 - Promise-based API
