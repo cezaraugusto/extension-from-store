@@ -107,7 +107,23 @@ When extraction is disabled, the archive is saved as:
 
 - `.crx`: strip CRX header, extract ZIP payload
 - `.xpi`: treat as ZIP
-- No normalization, no rewriting, no formatting
+- No content normalization, no rewriting, no formatting
+- Unix permission bits from the archive are not preserved: directories come
+  out `0755` and files come out `0644` (`0755` when the archive marked them
+  executable). Some store packages ship entries with modes like `0204` that
+  the owner cannot read back after extraction; browsers ignore archive modes
+  when installing, so this package does too.
+
+## When the store refuses to serve an extension
+
+Stores sometimes decline to serve a listed extension for download. The Chrome
+Web Store update endpoint answers `HTTP 204 No Content` instead of a CRX when
+an extension is blocked, for example when its update check reports
+`_malware="true"` (observed live with ModHeader,
+`idgpnmonknjnojddfkpgkljpfnnfcklj`, on 2026-08-02). This is a store-side
+refusal, not a truncated download: real Chrome clients get the same empty
+response. extension-from-store surfaces it as a `NotPublic` error that names
+the URL that returned no content.
 
 ## `extension.meta.json`
 

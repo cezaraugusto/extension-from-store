@@ -181,7 +181,26 @@ export async function downloadToFile (
     )
   }
 
+  if (statusCode === 204) {
+    stream.resume()
+
+    throw new extensionFromStoreError(
+      'NotPublic',
+      `Store returned no content for ${url}; ` +
+        'the extension is not being served for download'
+    )
+  }
+
   await pipeline(stream, fs.createWriteStream(filePath))
+
+  const {size} = await fs.promises.stat(filePath)
+
+  if (size === 0) {
+    throw new extensionFromStoreError(
+      'DownloadFailed',
+      `Downloaded file from ${url} is empty`
+    )
+  }
 }
 
 export async function requestJson<T> (
