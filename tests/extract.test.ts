@@ -136,3 +136,65 @@ describe('extraction mode normalization', () => {
     }
   })
 })
+
+describe('hostile archives', () => {
+  it('refuses entries that traverse outside the extraction dir', async () => {
+    const workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'extract-slip-'))
+
+    try {
+      const zipPath = path.join(workDir, 'payload.zip')
+      const extractDir = path.join(workDir, 'extracted')
+      const outside = path.join(workDir, 'pwned.txt')
+
+      await fs.writeFile(
+        zipPath,
+        Buffer.from(
+          zipSync({
+            '../pwned.txt': strToU8('escaped'),
+            'manifest.json': strToU8('{"manifest_version": 3}')
+          })
+        )
+      )
+      await fs.mkdir(extractDir, {recursive: true})
+
+      await expect(extractZipArchive(zipPath, extractDir)).rejects.toThrow(
+        /outside the extraction dir/
+      )
+      await expect(fs.access(outside)).rejects.toThrow()
+    } finally {
+      await fs.rm(workDir, {recursive: true, force: true})
+    }
+  })
+
+  it('never materializes symlink entries as symlinks', async () => {
+    const workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'extract-link-'))
+
+    try {
+      const zipPath = path.join(workDir, 'payload.zip')
+      const extractDir = path.join(workDir, 'extracted')
+
+      // 0o120777 marks the entry as a unix symlink; the data is its target.
+      await fs.writeFile(
+        zipPath,
+        Buffer.from(
+          zipSync({
+            evil: [
+              strToU8('../../../../etc/passwd'),
+              {os: 3, attrs: unixAttrs(0o120777)}
+            ],
+            'manifest.json': strToU8('{"manifest_version": 3}')
+          })
+        )
+      )
+      await fs.mkdir(extractDir, {recursive: true})
+      await extractZipArchive(zipPath, extractDir)
+
+      const stat = await fs.lstat(path.join(extractDir, 'evil'))
+
+      expect(stat.isSymbolicLink()).toBe(false)
+      expect(stat.isFile()).toBe(true)
+    } finally {
+      await fs.rm(workDir, {recursive: true, force: true})
+    }
+  })
+})
